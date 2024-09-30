@@ -1,0 +1,15 @@
+ocean: main.o visualizer.o 
+	cc -g main.o visualizer.o 
+	rm *.o
+	cp ./disassembler ./tests/
+	cp ./disassembler ./auto_tests/
+
+main.o: main.c
+	cc -c -g main.c -o main.o
+
+visualizer.o: ./2d_grid_drawer/main.c
+	cc ./2d_grid_drawer/main.c -O2 -o visualizer.o -fopenmp -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -lm -ldl -lGLEW
+
+clean: 
+	rm *.o output
+

@@ -1,0 +1,126 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+
+
+
+
+
+typedef struct grid_point {
+	double h;
+	double hu;
+	double hv;
+} grid_point;
+
+typedef struct grid{
+	int x_size;
+	int y_size;
+	grid_point * points_current;
+	grid_point * points_next;
+	grid_point * points_temp;
+	int nr_timesteps;
+	double * times; 
+} grid;
+
+void set_grid_point(grid_point * point, double h, double hu, double hv){
+	point->h = h;
+	point->hu = hu;
+	point->hv = hv;
+}
+
+grid * create_grid(int x_size, int y_size){
+	grid * new_grid = calloc(1, sizeof(grid));
+	new_grid -> x_size = x_size;
+	new_grid->y_size = y_size;
+	new_grid->points_current = calloc(x_size*y_size, sizeof(grid_point));
+	new_grid->points_next= calloc(x_size*y_size, sizeof(grid_point));
+	new_grid->points_temp = 0;
+	new_grid->nr_timesteps = 0;
+	new_grid->times = NULL;
+	return new_grid;
+}
+
+double * printable_grid_generator(grid * grid){
+	double * heights = calloc(grid->x_size*grid->y_size,sizeof(double));
+
+	#pragma omp parallel for
+	for (int h = 0; h<grid->y_size; h++){
+		#pragma omp parallel for simd
+		for (int w = 0; w<grid->x_size; w++){
+			heights[w+grid->x_size*h] = grid->points_current[w+grid->x_size*h].h;
+		}
+	}
+	
+	return heights;
+
+}
+
+void grid_points_copy(int x_size, int y_size,grid_point * source, grid_point * destination){
+	#pragma omp parallel for
+	for (int h = 0; h<y_size; h++){
+		#pragma omp parallel for simd
+		for (int w = 0; w<x_size; w++){
+			destination[w+x_size*h] = source[w+x_size*h];
+		}
+	}
+}
+
+void set_initial_conditions(grid * grid){
+	//goal: no momentum but increased height in the middle
+	int x_size = grid->x_size;
+	int y_size = grid->y_size;
+
+	#pragma omp parallel 
+	{	
+		#pragma omp for
+		for (int h = 0; h<y_size; h++){
+			#pragma omp parallel for simd
+			for (int w = 0; w<x_size; w++){
+				grid_point setter = {1.0, 0.0,0.0};
+				grid->points_current[w+x_size*h] = setter;
+				grid->points_next[w+x_size*h] = setter; 
+			}
+		}
+	
+		#pragma omp barrier
+		
+		#pragma omp for
+		for (int h = y_size/4; h<3*y_size/4; h++){
+			#pragma omp parallel for simd
+			for (int w = x_size/4; w<3*x_size/4; w++){
+				grid_point setter = {2.0, 0.0,0.0};
+				grid->points_current[w+x_size*h] = setter;
+				grid->points_next[w+x_size*h] = setter; 
+			}
+		}
+	}
+}
+
+void diffusion_step(grid * grid){
+	//this should be doable
+	int x_size = grid->x_size;
+	int y_size = grid->y_size;
+	grid_point * current = grid->points_current;
+	grid_point * next = grid->points_next;
+		
+	#pragma omp for
+	for (int h = 1; h<y_size-1; h++){
+		#pragma omp parallel for simd
+		for (int w = 1; w<x_size-1; w++){
+			grid_point setter = {1.0, 0.0,0.0};
+			grid->points_next[w+x_size*h] = grid->points_next[w+x_size*h]
+		}
+	}
+}
+
+void convection_step(){
+	//test that everything else is working before implementing this!
+}
+
+void simulate(){
+
+}
+
+int main(){
+	
+}
